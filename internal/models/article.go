@@ -4,8 +4,8 @@ import "time"
 
 //Article represent article in blog
 type Article struct {
-	ID          int
+	ID          int `gorm:"primaryKey"`
 	Title       string
 	Information string
-	Created     time.Time `gorm:"autoCreateTime"`
+	CreatedAt   time.Time `gorm:"autoCreateTime"`
 }
