@@ -2,6 +2,8 @@ package sqlstorage
 
 import (
 	"github.com/Garius6/blog/internal/models"
+	"github.com/Garius6/blog/internal/storage"
+	"gorm.io/gorm"
 )
 
 type ArticleRepository struct {
@@ -12,6 +14,9 @@ func (a *ArticleRepository) FindByID(ID int) (*models.Article, error) {
 	article := &models.Article{}
 	i := a.storage.Db.First(article, ID)
 	if i.Error != nil {
+		if i.Error == gorm.ErrRecordNotFound {
+			return nil, storage.ErrNotFound
+		}
 		return nil, i.Error
 	}
 

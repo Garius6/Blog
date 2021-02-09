@@ -17,7 +17,6 @@ func New(databaseURL string) (*Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	db.AutoMigrate(&models.Article{
 		Title:       "",
 		Information: "",

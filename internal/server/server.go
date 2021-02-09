@@ -19,6 +19,11 @@ func New(store storage.Storage) *Server {
 	}
 }
 
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	router := s.ConfigureRoutes()
+	router.ServeHTTP(w, r)
+}
+
 func (s *Server) ConfigureRoutes() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/", s.ArticleGetAllHandler)
@@ -56,9 +61,17 @@ func (s *Server) ArticleGetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, _ := template.ParseFiles("templates/article.html")
+	tmpl, err := template.ParseFiles("templates/article.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	a, err := s.Storage.Article().FindByID(ID)
 	if err != nil {
+		if err == storage.ErrNotFound {
+			http.Error(w, "Not found", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Database error", http.StatusBadRequest)
 		return
 	}
@@ -68,12 +81,15 @@ func (s *Server) ArticleGetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) ArticleCreateHandler(w http.ResponseWriter, r *http.Request) {
-	title := r.FormValue("title")
-	information := r.FormValue("information")
+	information, title := r.FormValue("title"), r.FormValue("information")
+	if information == "" || title == "" {
+		http.Error(w, "Bad values", http.StatusBadRequest)
+		return
+	}
 
 	ID, err := s.Storage.Article().Create(title, information)
 	if err != nil {
-		http.Error(w, "Bad values", http.StatusBadRequest)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
